@@ -1,0 +1,156 @@
+---
+title: "Univariate Analysis of Prosper Loan Data"
+author: "Anuj M. Ajwani"
+date: 
+output: html_document
+---
+========================================================
+
+> This abridged analysis is largely drawn from a more comprehensive analysis done for a Udacity Data Analysis Project. The data used is Prosper loan data available online. Click the hyperlinks provided for the [data](https://s3.amazonaws.com/udacity-hosted-downloads/ud651/prosperLoanData.csv) and its [associated variable dictionary](https://docs.google.com/spreadsheets/d/1gDyi_L4UvIrLTEC6Wri5nbaMmkGmLQBk-Yx3z0XDEtI/edit?usp=sharing).     
+
+> The univariate analysis below focuses on some key variables related to loan amount, credit availability, borrower rate, and loan performance. The data set has 113066 unique listing keys--the unique key for a loan listing--and listing numbers--the unique number for a loan listing--and most of the variables generally characterize these listings in some way. 
+
+> In the variables analyzed below, in some cases, there is a rightward or leftward skew in some distributions, but nothing particularly unusual and outliers do not appear to have a substantial impact. Given the large size of the data set, which has 113937 rows and 81 variables, only a select number of variables have been analyzed. See the accompanying bivariate and multivariate analyses for additional insight into the data set.
+
+
+
+```{r echo=TRUE, message=FALSE, warning=FALSE, packages_and_Loading_Data}
+
+# import ggplot library and read in the data
+
+library(ggplot2)
+
+LoanData  <- read.csv("prosperLoanData.csv")
+
+```
+
+
+```{r echo=TRUE, message=FALSE, warning=FALSE, Univariate_Plots_Preparation}
+
+# create functions for use in the rest of the project
+
+create_bar <- function(varname){return(ggplot(aes_string(x = 
+  varname), data = LoanData) + geom_bar())}
+
+create_hist <- function(varname, binwidth) {return(ggplot(aes_string(x = 
+  varname), data = LoanData) + geom_histogram(binwidth = binwidth))}
+
+```
+
+
+## Loan Original Amount Variable
+
+```{r echo=TRUE, message=FALSE, warning=FALSE, Univariate_Plots_1}
+
+create_hist('LoanOriginalAmount', 1000)
+
+summary(LoanData$LoanOriginalAmount)
+
+```
+ 
+> The plot and table above provide insight into the count for each original loan amount. Based on a look at the plot, most loans appear to be between $1000 and $10,000. The summary below the plot shows that the minimum amount is $1000 and the median is $6500 so the initial visual impression is accurate.
+
+
+
+## Credit Score, Income Range, and Debt to Income Ratio
+
+> Below are plots and tables for the 'CreditScoreRangeLower', 'IncomeRange' and 'DebtToIncomeRatio' variables. Each of these variables probably influence the terms of credit available to a borrower by influencing the borrower rate and are thus worth focusing on.
+
+
+### Credit Score 
+
+```{r echo=TRUE, message=FALSE, warning=FALSE, Univariate_Plots_2}
+
+create_hist('CreditScoreRangeLower', 30)
+
+summary(LoanData$CreditScoreRangeLower)
+
+```
+
+
+### Income Range
+
+```{r echo=TRUE, message=FALSE, warning=FALSE, Univariate_Plots_3}
+
+# reorder 'IncomeRange' variable so as to list levels of income in ascending order 
+LoanData$IncomeRange <- ordered(LoanData$IncomeRange, levels = 
+  c('Not displayed', 'Not employed', '$0', '$1-24,999', '$25,000-49,999',
+  '$50,000-74,999', '$75,000-99,999', '$100,000+' ))
+
+create_bar('IncomeRange') + theme(axis.text.x = element_text(angle = 90, 
+  hjust = 1))
+
+table(LoanData$IncomeRange)
+
+```
+
+
+
+### Debt to Income Ratio
+
+```{r echo=TRUE, message=FALSE, warning=FALSE, Univariate_Plots_4}
+
+create_hist('DebtToIncomeRatio', 0.1) + xlim(0,1.5)
+
+summary(LoanData$DebtToIncomeRatio)
+
+```
+
+> The 'DebtToIncomeRatio' plot above limits the x axis so as to focus in on the vast majority of borrowers who have a ratio less than 1.5. 
+
+> The plots and data for credit score, income, and debt to income rate and data above show that the vast majority (approximately 75% or upwards) of loans are made to borrowers with relatively good credit (i.e. over 660) and incomes in the range of $25,000-$99,999.  Furthermore, most of the loans also go to borrowers with a debt to income ratio less than 0.32. 
+
+> This shows that most loans go to borrowers who appear to have the means to make regular payments.  Furthermore, the shape of the distributions are not particularly notable or unusual in the case of the histograms.
+
+
+## Borrower Rate and Estimated Loss
+
+> Below are summary statistics and histograms for the 'BorrowerRate' and 'EstimatedLoss' variables, which are essentially loan characteristics at the time the loan is made.  Presumably these have been influenced by variables already discussed and to a great extent are probably akin to outcomes of the already discussed variables. 
+
+
+### Borrower Rate
+
+```{r echo=TRUE, message=FALSE, warning=FALSE, Univariate_Plots_5}
+
+summary(LoanData$BorrowerRate)
+
+create_hist('BorrowerRate', 0.01)
+
+```
+
+> The distribution of the 'BorrowerRate' histogram appears to slightly resemble a normal distribution, with the exception of some occasional spikes in the count, especially around the 0.3 rate.  The summary data above the histogram shows that most loans have a rate of less than 0.2. 
+
+
+### Estimated Loss
+
+```{r echo=TRUE, message=FALSE, warning=FALSE, Univariate_Plots_6}
+
+summary(LoanData$EstimatedLoss)
+
+create_hist('EstimatedLoss', 0.01)
+
+```
+
+> The 'EstimatedLoss' data shows that the mean, max, and median estimated losses are all less than corresponding numbers for borrower rate -- this is likely a reflection of the idea that a lender will require a borrower rate higher than estimated loss at the time of a loan being made.  
+
+
+## Gross Principal Loss Variable
+
+> 'LP_GrossPrincipalLoss' in contrast to the variables above, appears to be a metric focused on the performance of the loan after payments are due.   
+
+
+```{r echo=TRUE, message=FALSE, warning=FALSE, Univariate_Plots_7}
+
+summary(LoanData$LP_GrossPrincipalLoss)
+
+create_hist('LP_GrossPrincipalLoss', 3000)
+
+```
+
+> As the output above shows, most loans have a loss of 0 and are probably in the completed or current categories and a fairly small proportion of loans actually have any positive gross principal loss.
+
+
+## Conclusion 
+
+> The univariate analysis above shows that most loans go to borrowers who have the means to payback the loan and that only a relatively small percentage of loans have a positive principal loss.  For further insight into the dataset, see the accompanying bivariate and multivariate analyses.
+

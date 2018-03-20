@@ -1,0 +1,157 @@
+---
+title: "Multivariate Analysis of Prosper Loan Data"
+author: "Anuj M. Ajwani"
+date: 
+output: html_document
+---
+========================================================
+
+> This abridged analysis is largely drawn from a more comprehensive analysis done for a Udacity Data Analysis Project. The data used is Prosper loan data available online. Click the hyperlinks provided for the [data](https://s3.amazonaws.com/udacity-hosted-downloads/ud651/prosperLoanData.csv) and its [associated variable dictionary](https://docs.google.com/spreadsheets/d/1gDyi_L4UvIrLTEC6Wri5nbaMmkGmLQBk-Yx3z0XDEtI/edit?usp=sharing).     
+
+> The analysis below focuses on whether estimated loss is a useful metric in predicting actual loss.  See the accompanying univariate and bivariate analyses for additional insight into the data set.
+
+```{r echo=TRUE, message=FALSE, warning=FALSE, Packages_and_Read_In}
+
+library(ggplot2)
+LoanData  <- read.csv("prosperLoanData.csv")
+
+```
+
+
+```{r echo=TRUE, message=FALSE, warning=FALSE, Plots_Preparation}
+
+# creates a new variable 'BorrowerRate.bucket' by cutting the 
+# 'BorrowerRate' variable into several groups.  
+
+LoanData$BorrowerRate.bucket = cut(LoanData$BorrowerRate,
+  c( 0, 0.1, 0.2, 0.3, 1))
+
+# reorder 'IncomeRange' variable so as to list levels of income in ascending order 
+LoanData$IncomeRange <- ordered(LoanData$IncomeRange, levels = 
+  c('Not displayed', 'Not employed', '$0', '$1-24,999', '$25,000-49,999',
+  '$50,000-74,999', '$75,000-99,999', '$100,000+' ))
+
+```
+
+
+## Factors Shaping Borrower Rate, Loan Original Amount, and Gross Principal Loss
+
+> The plots below showcase the relationships of the credit score and income range variables to borrower rate and also the loan original amount.  The credit score variable has a sizable negative correlation (-0.46) with borrower rate and it is highly likely that higher credit scores on average are a key factor in reducing borrowing rates.  Higher income range also appears to be associated with lower borrower rates.  
+
+> It seems plausible that borrowers with better credit or higher income have access to larger loans at better or any rates and thus might be more likely to be the borrowers of the larger or largest loans. The plots below showcase this relationship. 
+
+
+```{r echo=TRUE, message=FALSE, warning=FALSE, Multivariate_Plots_1}
+
+ggplot(aes(color = BorrowerRate.bucket, x = LoanOriginalAmount, y = 
+  CreditScoreRangeLower), data = subset(LoanData, BorrowerRate.bucket
+  != 'NA')) + geom_jitter(alpha = 0.25) + geom_smooth(color = 'red') + 
+  scale_color_brewer(palette = 'Spectral')
+
+```
+
+> The plot above shows that credit scores are lower on average for the smaller loan amounts as shown by the red line. The color scheme shows that higher borrower rates are also generally associated with lower credit scores and concentrated in the smaller loan amounts area.  
+
+
+```{r echo=TRUE, message=FALSE, warning=FALSE, Multivariate_Plots_2}
+
+ggplot(aes(color = IncomeRange, y = LoanOriginalAmount, x = BorrowerRate), 
+  data = LoanData) + geom_jitter(alpha = 0.08) + 
+  geom_smooth() + ylim(0, 35500) + 
+  scale_color_brewer(palette = "Spectral")
+
+```
+
+> The plot above provides insight into how income shapes access to credit. The larger loan amounts are generally associated with lower borrower rates and higher income ranges. The colored lines show that loans with high income borrowers for a given borrower rate have on average larger loan amounts. 
+
+
+```{r echo=TRUE, message=FALSE, warning=FALSE, Multivariate_Plots_3}
+
+ggplot(aes(y = LP_GrossPrincipalLoss/LoanOriginalAmount, x = 
+  LoanOriginalAmount, color = IncomeRange), data = LoanData) + 
+  geom_jitter(alpha = 0.1) + geom_smooth() + 
+  scale_color_brewer(palette = "Spectral")
+
+```
+
+> The plot above shows that loans that involve the largest percentage loss ('LP_GrossPrincipalLoss/LoanOriginalAmount') tend to be smaller loans under $10,000 and the loss percentage on average is lower for higher income borrowers as the colored lines on the plot show.  
+
+
+## Comparing Estimated Loss with actual Gross Principal Loss
+
+> This section compares estimated loss with actual loss so as to gain an understanding of how well inputs that determined estimated loss predicted actual loss. For all the plots in this section a subset of the data that removes items in which 'EstimatedLoss' = 'NA' is being used. This is so that the data is comparable in each of the instances below.
+
+
+```{r echo=TRUE, message=FALSE, warning=FALSE, Multivariate_Plots_4}
+
+ggplot(aes(color = BorrowerRate.bucket, x = CreditScoreRangeLower, y = 
+  EstimatedLoss), data = subset(LoanData, EstimatedLoss != 'NA')) + 
+  geom_jitter(alpha = 0.4) + geom_smooth(color = 'red') + 
+  scale_color_brewer(palette = "Spectral")
+
+```
+
+> The plot above shows the estimated loss on the x axis and the lower end of the credit score on the y axis and the color scheme shows the BorrowerRate.bucket variable. Since the borrower rate and estimated loss are highly correlated (0.94) one would expect there to be a smooth trend from colors reflecting higher rates to lower rates as one moves down the y axis. This is apparent in the plot as is the trend of lower average estimated loss as the credit score increases as shown by the red line. This plot can be considered a benchmark of what the expectation of loss is when the loan is created.  
+
+> The plot above is thus a comparison point for the plot below, which has the ratio between gross principal loss and loan original amount ('LP_GrossPrincipalLoss/LoanOriginalAmount') on the y axis instead of 'EstimatedLoss'. 
+
+> Thus the plot below is a depiction of actual loss and can be compared to the plot above which is a depiction of estimated loss. The color scheme and the x axis represent the 'BorrowerRate.bucket' variable and the lower end of the credit score respectively just as they do in the first plot. 
+
+
+```{r echo=TRUE, message=FALSE, warning=FALSE, Multivariate_Plots_5}
+
+ggplot(aes(color = BorrowerRate.bucket, x = CreditScoreRangeLower, y = 
+  LP_GrossPrincipalLoss/LoanOriginalAmount), data = subset(LoanData, 
+  EstimatedLoss != 'NA')) + geom_jitter(alpha = 0.4) + 
+  geom_smooth(color = 'red') + scale_color_brewer(palette = "Spectral")
+
+```
+
+> The contrast between the first and second plots above is apparent in that the trend from blue to red colors indicative of the trend from higher to lower borrower rate as the credit score goes up and as one moves lower on the y axis is not as smooth as in the first plot. It is worth noting that the y axis scale in the two plots is different in that the one for estimated loss tops out at approximately 0.4 while in the second plot it goes all the way to 1. 
+
+> This lack of similar smoothness is plausible since the estimated loss could be viewed as a type of expected value, which will not always come true for every loan, but several similar loans might together have an average equal to the estimated loss, thus making the estimated loss a useful tool for managing risk, but also not as realistic as actual loss data for an individual loan.  The scale for the second plot however depicts actual loss proportion rather than an estimate or an expected value and thus in many cases the proportion is equivalent to one.  
+
+> The fact that the trend is not as smooth as in the first plot as one moves right on the x axis and downwards on the y axis is in part because some loans that were estimated to be low risk with low borrower rates and thus are of red or orange color are in the upper right area of the second plot -- approximately loans with a actual loss ratio of over 0.75 and with a credit score lower range over 700. 
+
+> Although the trend is not as smooth in the second plot, the visual can be deceptive in that the presence of red or orange dots in the upper right need not mean that loans with a relatively high credit score have on average a higher actual loss proportion compared to estimated loss. 
+
+> In both the first and the second plot, the red line, which depicts the average loss for a particular credit score, has a downward trend and the estimated loss line and the actual loss line have a similar but not identical trajectory suggesting that on average the estimates for the loss were not too far from actual loss.
+
+> The plot below focuses in on the difference between a loan's actual loss and the estimated loss in the y axis.
+
+
+```{r echo=TRUE, message=FALSE, warning=FALSE, Multivariate_Plots_6}
+
+ggplot(aes(color = BorrowerRate.bucket, x = CreditScoreRangeLower, y = 
+  LP_GrossPrincipalLoss/LoanOriginalAmount-EstimatedLoss), data = 
+  subset(LoanData, EstimatedLoss != 'NA')) + geom_jitter(alpha = 0.4) + 
+  geom_smooth(color = 'black')+ scale_color_brewer(palette = 'Spectral')
+
+
+```
+
+> There is at least somewhat of a trend from blue to red as one moves along the x axis as the credit score increases, showing that higher credit score reduces borrowing costs. Furthermore, there are fewer instances of high loss proportion as the credit score moves up.
+
+> The black line on this plot, indicative of a smoothed average of actual loss minus estimated loss for a given credit score starts off slightly above 0 and then goes below zero until approximately 750 on the x axis. Thereafter this line largely stays on 0. The trajectory of the line suggests that on average there is not much of a difference between the actual loss and estimated loss. Although this seems plausible, I did not necessarily expect this and thus it is useful to have it plotted above. 
+
+> A point of caution is in order because the average for each credit score does not take into account the size of the loan in that the loss proportion for both a $1,000 loan or a $35,000 loan would be weighted equally -- this is a fact to be aware of and thus any conclusions drawn from this plot should be treated as tentative. 
+
+
+
+
+### Conclusion
+
+> The basic insight gained was that high income and higher credit scores on average reduce borrower rates and improve access to capital. 
+
+> The final plot from the section above focuses in on the difference between a loan's actual loss and the estimated loss in the y axis. The black line on this plot, indicative of a smoothed average of actual loss minus estimated loss has a trajectory that largely stays near 0.  
+
+> Thus suggests that on average the estimated loss provides a reasonable estimate of actual loss.  
+
+
+
+
+
+
+
+
+

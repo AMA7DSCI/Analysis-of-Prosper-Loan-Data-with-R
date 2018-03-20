@@ -1,0 +1,145 @@
+---
+title: "Bivariate Analysis of Prosper Loan Data"
+author: "Anuj M. Ajwani"
+date: 
+output: html_document
+---
+========================================================
+
+> This abridged analysis is largely drawn from a more comprehensive analysis done for a Udacity Data Analysis Project. The data used is Prosper loan data available online. Click the hyperlinks provided for the [data](https://s3.amazonaws.com/udacity-hosted-downloads/ud651/prosperLoanData.csv) and its [associated variable dictionary](https://docs.google.com/spreadsheets/d/1gDyi_L4UvIrLTEC6Wri5nbaMmkGmLQBk-Yx3z0XDEtI/edit?usp=sharing).     
+
+> The analysis below focuses variables such as 'LoanOriginalAmount', 'BorrowerRate', and 'LP_GrossPrincipalLoss' with an eye towards understanding how credit score and income shape them.  See the accompanying univariate and multivariate analyses for additional insight into the data set.
+
+
+```{r echo=TRUE, message=FALSE, warning=FALSE, packages_and_Loading_Data}
+
+# import ggplot library and read in the data
+
+library(ggplot2)
+LoanData  <- read.csv("prosperLoanData.csv")
+
+```
+
+
+## Loan Original Amount
+
+> Since loan original amount is a potential proxy for credit availability, it is important to see how it interacts with other variables. Generally, my expectation that credit availability and high loan amount would be positively correlated with high quality borrowers (those with higher incomes and better credit scores) was largely borne out by the data.
+
+
+```{r echo=TRUE, message=FALSE, warning=FALSE, Bivariate_Plots_1}
+
+ggplot(aes(x = factor(CreditScoreRangeLower), 
+  y = LoanOriginalAmount), data = LoanData) + 
+  geom_boxplot(alpha = 0.2, color = 'red') + 
+  theme(axis.text.x = element_text(angle = 90,
+  hjust = 1)) + labs(x = "CreditScoreRangeLower")
+
+```
+
+> The plot above shows that the median loan amount for a given entry of the 'CreditScoreRangeLower' variable initially increases as the credit score increases but eventually plateaus and then declines a little.  
+
+
+```{r echo=TRUE, message=FALSE, warning=FALSE, Bivariate_Plots_2}
+
+# reorder 'IncomeRange' variable so as to list levels of income in ascending order 
+LoanData$IncomeRange <- ordered(LoanData$IncomeRange, levels = 
+  c('Not displayed', 'Not employed', '$0', '$1-24,999', '$25,000-49,999',
+  '$50,000-74,999', '$75,000-99,999', '$100,000+' ))
+
+ggplot(aes(x = factor(IncomeRange), 
+  y = LoanOriginalAmount), data = LoanData) + 
+  geom_boxplot(alpha = 0.2, color = 'red') + 
+  theme(axis.text.x = element_text(angle = 90,
+  hjust = 1)) + labs(x = "IncomeRange")
+
+```
+
+
+> The plot above shows that as the income range increases after $1-24,999 the median loan amount for a given income range also increases.  The plots above suggest that borrowers with better credit or higher income have access to larger loans at better or any rates and thus might be more likely to be the borrowers of the larger or largest loans.  
+
+
+### Borrower Rate
+
+> The plot below shows that median borrower rate goes down after the $1-24,999 income range.   
+
+```{r echo=TRUE, message=FALSE, warning=FALSE, Bivariate_Plots_3}
+
+ggplot(aes(x = factor(IncomeRange), 
+  y = BorrowerRate), data = LoanData) + 
+  geom_boxplot(alpha = 0.2, color = 'red') + 
+  theme(axis.text.x = element_text(angle = 90,
+  hjust = 1)) + labs(x = "IncomeRange")
+
+
+```
+
+
+
+
+> A similar downward trend is present in borrower rate as the credit score increases.  
+
+```{r echo=TRUE, message=FALSE, warning=FALSE, Bivariate_Plots_4}
+
+ggplot(aes(x = factor(CreditScoreRangeLower), 
+  y = BorrowerRate), data = LoanData) + 
+  geom_boxplot(alpha = 0.2, color = 'red') + 
+  theme(axis.text.x = element_text(angle = 90,
+  hjust = 1)) + labs(x = "CreditScoreRangeLower")
+
+
+```
+
+
+
+```{r echo=TRUE, message=FALSE, warning=FALSE, Bivariate_Plots_5}
+
+ggplot(aes(x = factor(CreditScoreRangeLower), 
+  y = EstimatedLoss), data = LoanData) + 
+  geom_boxplot(alpha = 0.2, color = 'red') +
+  theme(axis.text.x = element_text(angle = 90,
+  hjust = 1)) + labs(x = "CreditScoreRangeLower")
+
+```
+
+> The plot above shows that median estimated loss also goes down as credit score increases. This is plausible given the high correlation (0.94) between borrower rate and estimated loss.
+
+
+## Gross Principal Loss
+
+> The variables discussed so far are metrics related to the loan or the borrower at the time of the loan being made.  The gross principal loss metric in contrast relates to performance of the loan after the payment period starts. 
+
+
+```{r echo=TRUE, message=FALSE, warning=FALSE, Bivariate_Plots_6}
+
+ggplot(aes(y = LP_GrossPrincipalLoss/LoanOriginalAmount, x = 
+  CreditScoreRangeLower), data = LoanData) + geom_jitter(alpha 
+  = 0.1, color = 'red') + geom_smooth()
+
+```
+
+> The plot above shows the lower end of the credit score on the x axis and the y axis has the 'LP_GrossPrincipalLoss' variable as a proportion of the original loan amount. Using the proportion instead of the variable alone provides valuable context about the percentage of the loss. 
+
+> As is apparent in this plot, the blue line, which shows a smoothed average of the proportion lost for a particular credit score, initially rises, but eventually shows a downward trend for most of the data points as the credit score increases. This is plausible and meets my expectations.
+
+> The correlation between these two metrics is -0.27 -- Although this is not very high in absolute terms, it is also not negligible -- the correlations between the credit score metric and borrower rate (-0.46) and loan original amount (0.34) are higher in absolute terms however, suggesting that the credit score would be less predictive of the gross loss proportion than it is of the borrower rate.
+
+
+```{r echo=TRUE, message=FALSE, warning=FALSE, Bivariate_Plots_7}
+
+ggplot(aes(y = LP_GrossPrincipalLoss/LoanOriginalAmount, x = 
+  BorrowerRate), data = LoanData) + geom_jitter(alpha = 0.1, 
+  color = 'red') + geom_smooth()
+
+```
+
+> The plot above has the borrower rate on the x axis and the 'LP_GrossPrincipalLoss/LoanOriginalAmount' ratio on the y axis and the blue line, which is a smoothed average of the proportion lost for a particular borrower rate, goes up as the borrower rate increases. This is generally plausible and reflects the idea that the higher the risk of loss the higher the borrower rate. 
+
+
+### Conclusion
+
+> The analysis above shows that credit score and income range variables are both important in determining the borrower rate, which in turn appears to have affected borrower behavior, including the amount of the loan borrowers borrow.  The credit score also appears to have a non-negligible correlation with the 'LP_GrossPrincipalLoss/LoanOriginalAmount' ratio as discussed above, suggesting that it has at least some predictive value in providing insight into the nature of the risk to lenders.  
+
+
+
+
+
